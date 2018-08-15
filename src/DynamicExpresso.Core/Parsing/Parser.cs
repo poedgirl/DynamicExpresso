@@ -137,16 +137,46 @@ namespace DynamicExpresso.Parsing
 		// && operator
 		private Expression ParseLogicalAnd()
 		{
-			var left = ParseComparison();
+			var left = ParseBitwiseAnd();
 			while (_token.id == TokenId.DoubleAmphersand)
 			{
 				NextToken();
-				var right = ParseComparison();
+				var right = ParseBitwiseAnd();
 				CheckAndPromoteOperands(typeof(ParseSignatures.ILogicalSignatures), ref left, ref right);
 				left = Expression.AndAlso(left, right);
 			}
 			return left;
 		}
+
+		// & operator
+        private Expression ParseBitwiseAnd()
+        {
+            var left = ParseBitwiseOr();
+            while (_token.id == TokenId.Amphersand)
+            {
+                var op = _token;
+                NextToken();
+                var right = ParseBitwiseOr();
+                CheckAndPromoteOperands(typeof(ParseSignatures.ILogicalSignatures), ref left, ref right);
+                left = Expression.And(left, right);
+            }
+            return left;
+        }
+
+        // | operator
+        private Expression ParseBitwiseOr()
+        {
+            var left = ParseComparison();
+            while (_token.id == TokenId.Bar)
+            {
+                var op = _token;
+                NextToken();
+                var right = ParseComparison();
+                CheckAndPromoteOperands(typeof(ParseSignatures.ILogicalSignatures), ref left, ref right);
+                left = Expression.Or(left, right);
+            }
+            return left;
+        }
 
 		// ==, !=, >, >=, <, <= operators
 		private Expression ParseComparison()
@@ -458,7 +488,14 @@ namespace DynamicExpresso.Parsing
 			//}
 
 			NextToken();
-			return CreateLiteral(s);
+
+            // Check if the passed in string is compatible with DateTime
+            if (DateTime.TryParse(s, out var dateparse))
+            {
+                return CreateLiteral(dateparse);
+            }
+
+            return CreateLiteral(s);
 		}
 
 		private string EvalEscapeStringLiteral(string source)
@@ -1817,7 +1854,7 @@ namespace DynamicExpresso.Parsing
 					}
 					else
 					{
-						throw CreateParseException(_parsePosition, ErrorMessages.InvalidCharacter, _parseChar);
+                        t = TokenId.Amphersand;
 					}
 					break;
 				case '(':

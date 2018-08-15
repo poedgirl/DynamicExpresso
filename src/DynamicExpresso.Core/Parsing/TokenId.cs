@@ -27,6 +27,7 @@
 		CloseBracket,
 		Bar,
 		ExclamationEqual,
+		Amphersand,
 		DoubleAmphersand,
 		LessThanEqual,
 		DoubleEqual,
